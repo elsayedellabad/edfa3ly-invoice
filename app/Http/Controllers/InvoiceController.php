@@ -7,6 +7,7 @@ use App\Constants\Constants;
 use App\Exceptions\FunctionalException;
 use App\Services\InvoiceService;
 use App\Models\InvoiceDTO;
+use Throwable;
 class InvoiceController extends Controller
 {
     private $invoiceService;
@@ -19,13 +20,19 @@ class InvoiceController extends Controller
      * @return object json of all invoice details
      */
     public function index(Request $request){ 
-        $post =  json_decode($request->getContent());        
-        $cartProducts = $post->{'items'};
-        if(!isset($cartProducts) || count($cartProducts) == 0){
-            throw new FunctionalException(Constants::NO_PRODUCTS_IN_CART_WARNINIG);
+        try {
+            $post =  json_decode($request->getContent());        
+            $cartProducts = $post->{'items'};
+            if(!isset($cartProducts) || count($cartProducts) == 0){
+                throw new FunctionalException(Constants::NO_PRODUCTS_IN_CART_WARNINIG);
+            }
+            $invoideDTO = $this->invoiceService->calcCartInvoice($cartProducts);
+            return $this-> buildInvoiceResponse($invoideDTO);
+        } catch (Throwable $e) {
+            throw new FunctionalException(Constants::GENERAL_EXCEPTION. $e->getMessage());  
+    
+           
         }
-        $invoideDTO = $this->invoiceService->calcCartInvoice($cartProducts);
-        return $this-> buildInvoiceResponse($invoideDTO);
     }
 
     private function buildInvoiceResponse(InvoiceDTO $invoiceDTO) {
